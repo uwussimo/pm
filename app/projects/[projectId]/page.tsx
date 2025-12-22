@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { ProjectBoard } from "@/components/project-board";
+import { ProjectBoard } from "@/components/features/kanban/project-board";
 
 export default async function ProjectPage({
   params,
