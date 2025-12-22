@@ -43,6 +43,7 @@ export async function GET(
                 email: true,
               },
             },
+            status: true,
             _count: {
               select: {
                 comments: true,

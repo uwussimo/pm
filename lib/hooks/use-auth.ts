@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { useRouter } from "next/navigation";
@@ -15,7 +16,7 @@ export function useAuth() {
   const queryClient = useQueryClient();
   const router = useRouter();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["auth", "me"],
     queryFn: async () => {
       const res = await fetch("/api/auth/me");
@@ -25,19 +26,40 @@ export function useAuth() {
       const data = await res.json();
       return data.user as User;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 1 * 60 * 1000, // 1 minute - check more frequently
     retry: false,
-    enabled: !user, // Only fetch if we don't have user in store
+    refetchOnMount: true, // Always check on mount
+    refetchOnWindowFocus: false,
   });
 
-  // Sync query data with store
-  if (data && !user) {
-    setUser(data);
-  }
+  // Sync query data with store using useEffect to avoid setState during render
+  useEffect(() => {
+    const currentUser = useAuthStore.getState().user;
+    if (data && (!currentUser || currentUser.id !== data.id)) {
+      useAuthStore.getState().setUser(data);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
 
-  if (!isLoading && !data && user) {
-    clearUser();
-  }
+  // Clear cache if authentication fails
+  useEffect(() => {
+    if (error) {
+      const currentUser = useAuthStore.getState().user;
+      if (currentUser) {
+        useAuthStore.getState().clearUser();
+        queryClient.clear();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error]);
+
+  useEffect(() => {
+    const currentUser = useAuthStore.getState().user;
+    if (!isLoading && !data && currentUser) {
+      useAuthStore.getState().clearUser();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, isLoading]);
 
   const signInMutation = useMutation({
     mutationFn: async ({
