@@ -13,11 +13,11 @@ interface PresenceAvatarsProps {
   members: PresenceMember[];
 }
 
-// Generate consistent color for user
+// Refined color palette
 function getUserColor(userId: string): string {
   const colors = [
-    "#3B82F6", // blue
-    "#8B5CF6", // purple
+    "#0EA5E9", // sky blue
+    "#8B5CF6", // violet
     "#EC4899", // pink
     "#F59E0B", // amber
     "#10B981", // emerald
@@ -37,12 +37,14 @@ function getUserColor(userId: string): string {
 export function PresenceAvatars({ members }: PresenceAvatarsProps) {
   if (members.length === 0) return null;
 
+  const displayMembers = members.slice(0, 4);
+  const remainingCount = members.length - 4;
+
   return (
     <TooltipProvider>
-      <div className="flex items-center gap-1">
-        <span className="text-[13px] text-muted-foreground mr-2">Viewing:</span>
-        <div className="flex -space-x-2">
-          {members.map((member) => {
+      <div className="flex items-center gap-1.5">
+        <div className="flex items-center -space-x-1.5">
+          {displayMembers.map((member) => {
             const initials = member.info.name
               .split(" ")
               .map((n) => n[0])
@@ -53,31 +55,48 @@ export function PresenceAvatars({ members }: PresenceAvatarsProps) {
             const color = getUserColor(member.id);
 
             return (
-              <Tooltip key={member.id}>
+              <Tooltip key={member.id} delayDuration={200}>
                 <TooltipTrigger asChild>
-                  <Avatar className="h-8 w-8 border-2 border-background ring-2 ring-muted">
-                    <AvatarFallback
-                      className="text-[11px] font-semibold text-white"
+                  <div className="relative group">
+                    <Avatar className="h-7 w-7 border-2 border-background transition-all duration-200 hover:scale-110 hover:z-10 cursor-pointer shadow-sm">
+                      <AvatarFallback
+                        className="text-[10px] font-semibold text-white"
+                        style={{ backgroundColor: color }}
+                      >
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
+                    {/* Clean active indicator */}
+                    <div
+                      className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border border-background shadow-sm"
                       style={{ backgroundColor: color }}
-                    >
-                      {initials}
-                    </AvatarFallback>
-                  </Avatar>
+                    />
+                  </div>
                 </TooltipTrigger>
-                <TooltipContent>
-                  <p className="text-[13px]">{member.info.name}</p>
-                  <p className="text-[11px] text-muted-foreground">
-                    {member.info.email}
-                  </p>
+                <TooltipContent side="bottom" className="px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{ backgroundColor: color }}
+                    />
+                    <div className="text-left">
+                      <p className="text-[12px] font-medium leading-none">
+                        {member.info.name}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        Viewing now
+                      </p>
+                    </div>
+                  </div>
                 </TooltipContent>
               </Tooltip>
             );
           })}
         </div>
-        {members.length > 3 && (
-          <span className="text-[13px] text-muted-foreground ml-2">
-            +{members.length - 3} more
-          </span>
+        {remainingCount > 0 && (
+          <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center text-[10px] font-medium text-muted-foreground border-2 border-background shadow-sm">
+            +{remainingCount}
+          </div>
         )}
       </div>
     </TooltipProvider>

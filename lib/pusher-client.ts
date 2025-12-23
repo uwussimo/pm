@@ -9,8 +9,9 @@ export function getPusherClient() {
     const cluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER;
 
     if (!key || !cluster) {
-      console.warn(
-        "Pusher not configured. Real-time features will be disabled."
+      console.error(
+        "❌ Pusher not configured! Missing environment variables:",
+        { key: key ? "✅" : "❌", cluster: cluster ? "✅" : "❌" }
       );
       return null;
     }

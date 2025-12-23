@@ -24,7 +24,7 @@ import {
   useCursors,
   useRealtimeUpdates,
 } from "@/lib/hooks/use-realtime";
-import { useAuthStore } from "@/lib/stores/auth-store";
+import { useAuth } from "@/lib/hooks/use-auth";
 import { PresenceAvatars } from "@/components/features/collaboration/presence-avatars";
 import { Cursor } from "@/components/features/collaboration/cursor";
 import { AnimatePresence } from "framer-motion";
@@ -40,7 +40,9 @@ export function ProjectBoard({ projectId }: ProjectBoardProps) {
   const moveTask = useMoveTask(projectId);
   const modal = useModal();
   const queryClient = useQueryClient();
-  const user = useAuthStore((state) => state.user);
+
+  // Load user properly
+  const { user } = useAuth();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterAssignee, setFilterAssignee] = useState<string>("all");
@@ -62,12 +64,11 @@ export function ProjectBoard({ projectId }: ProjectBoardProps) {
 
   useRealtimeUpdates(projectId, handleRealtimeUpdate);
 
-  // Broadcast cursor position
+  // Broadcast cursor position - Figma-style (smoother, less throttling)
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
       if (!user || !channel) return;
 
-      // Throttle cursor updates
       if (throttleRef.current) {
         clearTimeout(throttleRef.current);
       }
@@ -75,26 +76,28 @@ export function ProjectBoard({ projectId }: ProjectBoardProps) {
       throttleRef.current = setTimeout(() => {
         const userName = (user as any).name || user.email.split("@")[0];
         broadcastCursor(e.clientX, e.clientY, userName);
-      }, 50);
+      }, 16);
     },
     [user, channel, broadcastCursor]
   );
 
   useEffect(() => {
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      if (throttleRef.current) {
-        clearTimeout(throttleRef.current);
-      }
-    };
-  }, [handleMouseMove]);
+    if (user && channel) {
+      window.addEventListener("mousemove", handleMouseMove);
+      return () => {
+        window.removeEventListener("mousemove", handleMouseMove);
+        if (throttleRef.current) {
+          clearTimeout(throttleRef.current);
+        }
+      };
+    }
+  }, [handleMouseMove, user, channel]);
 
-  // Generate consistent color for each user
+  // Refined color palette matching presence avatars
   const getUserColor = (userId: string): string => {
     const colors = [
-      "#3B82F6", // blue
-      "#8B5CF6", // purple
+      "#0EA5E9", // sky blue
+      "#8B5CF6", // violet
       "#EC4899", // pink
       "#F59E0B", // amber
       "#10B981", // emerald
@@ -255,10 +258,14 @@ export function ProjectBoard({ projectId }: ProjectBoardProps) {
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5">
               {/* Presence Avatars */}
-              <PresenceAvatars members={members} />
-              <div className="h-6 w-px bg-border" />
+              {members.length > 0 && (
+                <>
+                  <PresenceAvatars members={members} />
+                  <div className="h-4 w-px bg-border/60" />
+                </>
+              )}
               <Button
                 variant="outline"
                 size="sm"
@@ -447,15 +454,18 @@ export function ProjectBoard({ projectId }: ProjectBoardProps) {
 
       {/* Real-time Cursors */}
       <AnimatePresence>
-        {Array.from(cursors.values()).map((cursor) => (
-          <Cursor
-            key={cursor.userId}
-            x={cursor.x}
-            y={cursor.y}
-            userName={cursor.userName}
-            color={getUserColor(cursor.userId)}
-          />
-        ))}
+        {Array.from(cursors.values()).map((cursor) => {
+          const color = getUserColor(cursor.userId);
+          return (
+            <Cursor
+              key={cursor.userId}
+              x={cursor.x}
+              y={cursor.y}
+              userName={cursor.userName}
+              color={color}
+            />
+          );
+        })}
       </AnimatePresence>
     </div>
   );

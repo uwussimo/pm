@@ -26,10 +26,21 @@ export function usePresence(projectId: string | null, currentUserId: string) {
   const [channel, setChannel] = useState<PresenceChannel | null>(null);
 
   useEffect(() => {
-    if (!projectId) return;
+    if (!projectId) {
+      console.warn("🔴 No projectId for presence");
+      return;
+    }
 
     const pusher = getPusherClient();
-    if (!pusher) return;
+    if (!pusher) {
+      console.warn("🔴 Pusher client not initialized");
+      return;
+    }
+
+    console.log(
+      "🟢 Subscribing to presence channel:",
+      `presence-project-${projectId}`
+    );
 
     const presenceChannel = pusher.subscribe(
       `presence-project-${projectId}`
@@ -37,8 +48,10 @@ export function usePresence(projectId: string | null, currentUserId: string) {
 
     // Handle initial members list
     presenceChannel.bind("pusher:subscription_succeeded", () => {
+      console.log("✅ Presence subscription succeeded");
       const allMembers: PresenceMember[] = [];
       presenceChannel.members.each((member: any) => {
+        console.log("👤 Member in channel:", member);
         if (member.id !== currentUserId) {
           allMembers.push({
             id: member.id,
@@ -46,7 +59,13 @@ export function usePresence(projectId: string | null, currentUserId: string) {
           });
         }
       });
+      console.log("👥 Total members (excluding self):", allMembers.length);
       setMembers(allMembers);
+    });
+
+    // Handle subscription errors
+    presenceChannel.bind("pusher:subscription_error", (error: any) => {
+      console.error("❌ Presence subscription error:", error);
     });
 
     // Handle new member joining
@@ -92,28 +111,36 @@ export function useCursors(
   );
 
   useEffect(() => {
-    if (!channel) return;
+    if (!channel) {
+      console.warn("🔴 No channel available for cursors");
+      return;
+    }
+
+    console.log("🟢 Setting up cursor listeners on channel:", channel.name);
 
     // Listen for cursor updates from other users
     const handleCursorUpdate = (data: CursorPosition) => {
+      console.log("📍 Cursor update received:", data);
       if (data.userId !== currentUserId) {
         setCursors((prev) => {
           const next = new Map(prev);
           next.set(data.userId, data);
+          console.log("🖱️ Active cursors:", next.size);
           return next;
         });
 
-        // Remove stale cursors after 5 seconds of inactivity
+        // Remove stale cursors after 3 seconds of inactivity (Figma-style)
         setTimeout(() => {
           setCursors((prev) => {
             const next = new Map(prev);
             const cursor = next.get(data.userId);
             if (cursor && cursor.timestamp === data.timestamp) {
               next.delete(data.userId);
+              console.log("🗑️ Removed stale cursor for:", data.userId);
             }
             return next;
           });
-        }, 5000);
+        }, 3000);
       }
     };
 
@@ -126,15 +153,35 @@ export function useCursors(
 
   const broadcastCursor = useCallback(
     (x: number, y: number, userName: string) => {
-      if (!channel) return;
+      if (!channel) {
+        console.warn("🔴 Cannot broadcast cursor: no channel");
+        return;
+      }
 
-      channel.trigger("client-cursor-move", {
+      const data = {
         userId: currentUserId,
         userName,
         x,
         y,
         timestamp: Date.now(),
-      });
+      };
+
+      console.log("📤 Broadcasting cursor:", data, "on channel:", channel.name);
+      
+      try {
+        const result = channel.trigger("client-cursor-move", data);
+        if (!result) {
+          console.error("❌ Trigger returned false - Client Events might not be enabled or channel not ready");
+        } else {
+          console.log("✅ Cursor broadcast successful");
+        }
+      } catch (error) {
+        console.error("❌ Failed to broadcast cursor:", error);
+        console.error("Channel state:", {
+          subscribed: channel.subscribed,
+          name: channel.name,
+        });
+      }
     },
     [channel, currentUserId]
   );
