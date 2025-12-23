@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { broadcastTaskEvent } from "@/lib/hooks/use-realtime";
 
 interface User {
   id: string;
@@ -117,9 +118,11 @@ export function useCreateTask(projectId: string) {
       }
       toast.error("Failed to create task");
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["projects", projectId] });
       toast.success("Task created successfully");
+      // Broadcast to other users
+      broadcastTaskEvent(projectId, "task-created", { taskId: data.id });
     },
   });
 }
@@ -207,6 +210,8 @@ export function useUpdateTask(taskId: string, projectId: string) {
       queryClient.invalidateQueries({ queryKey: ["projects", projectId] });
       queryClient.invalidateQueries({ queryKey: ["tasks", taskId] });
       toast.success("Task updated successfully");
+      // Broadcast to other users
+      broadcastTaskEvent(projectId, "task-updated", { taskId });
     },
   });
 }
@@ -253,6 +258,8 @@ export function useDeleteTask(taskId: string, projectId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects", projectId] });
       toast.success("Task deleted successfully");
+      // Broadcast to other users
+      broadcastTaskEvent(projectId, "task-deleted", { taskId });
     },
   });
 }
@@ -333,9 +340,11 @@ export function useMoveTask(projectId: string) {
       }
       toast.error("Failed to move task");
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       console.log("✨ onSuccess - Task moved successfully");
       toast.success("Task moved");
+      // Broadcast to other users
+      broadcastTaskEvent(projectId, "task-moved", { taskId: data.id });
     },
     onSettled: () => {
       console.log("🔄 onSettled - Invalidating queries");

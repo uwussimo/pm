@@ -140,7 +140,7 @@ export function useUpdateProject(projectId: string) {
       description?: string;
     }) => {
       const res = await fetch(`/api/projects/${projectId}`, {
-        method: "PUT",
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, description }),
       });

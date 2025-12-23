@@ -10,6 +10,7 @@ import type {
   ShareProjectData,
   CreateStatusData,
   CreateProjectData,
+  EditProjectData,
   ConfirmData,
 } from "@/lib/stores/modal-store";
 import { TaskDialog } from "@/components/features/tasks/task-dialog";
@@ -20,6 +21,7 @@ import { ManageUsersDialog } from "@/components/features/projects/manage-users-d
 import { ShareProjectDialog } from "@/components/features/projects/share-project-dialog";
 import { CreateStatusDialog } from "@/components/features/statuses/create-status-dialog";
 import { CreateProjectDialog } from "@/components/features/projects/create-project-dialog";
+import { EditProjectDialog } from "@/components/features/projects/edit-project-dialog";
 
 export function ModalProvider() {
   const modals = useModalStore((state) => state.modals);
@@ -129,6 +131,20 @@ export function ModalProvider() {
                 key={modal.id}
                 open={true}
                 onOpenChange={handleClose}
+              />
+            );
+          }
+
+          case "editProject": {
+            const data = modal.data as EditProjectData;
+            return (
+              <EditProjectDialog
+                key={modal.id}
+                open={true}
+                onOpenChange={handleClose}
+                projectId={data.projectId}
+                initialName={data.name}
+                initialDescription={data.description}
               />
             );
           }

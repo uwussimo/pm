@@ -58,6 +58,15 @@ function ProjectCard({ project, onClick, modal }: ProjectCardProps) {
     modal.openManageUsers({ projectId: project.id });
   };
 
+  const handleEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    modal.openEditProject({
+      projectId: project.id,
+      name: project.name,
+      description: project.description,
+    });
+  };
+
   return (
     <Card
       className="group relative cursor-pointer hover:shadow-sm transition-all duration-200 border bg-background"
@@ -97,7 +106,10 @@ function ProjectCard({ project, onClick, modal }: ProjectCardProps) {
                 <Users className="h-4 w-4" />
                 Manage Users
               </DropdownMenuItem>
-              <DropdownMenuItem className="gap-2 cursor-pointer">
+              <DropdownMenuItem
+                className="gap-2 cursor-pointer"
+                onClick={handleEdit}
+              >
                 <Edit className="h-4 w-4" />
                 Edit Project
               </DropdownMenuItem>

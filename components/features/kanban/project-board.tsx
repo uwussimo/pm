@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Settings, Share2, Search, Plus, X } from "lucide-react";
 import Link from "next/link";
@@ -19,6 +19,16 @@ import { getUserDisplayName } from "@/components/ui/user-avatar";
 import { useProject } from "@/lib/hooks/use-projects";
 import { useMoveTask } from "@/lib/hooks/use-tasks";
 import { useModal } from "@/lib/hooks/use-modal";
+import {
+  usePresence,
+  useCursors,
+  useRealtimeUpdates,
+} from "@/lib/hooks/use-realtime";
+import { useAuthStore } from "@/lib/stores/auth-store";
+import { PresenceAvatars } from "@/components/features/collaboration/presence-avatars";
+import { Cursor } from "@/components/features/collaboration/cursor";
+import { AnimatePresence } from "framer-motion";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface ProjectBoardProps {
   projectId: string;
@@ -29,10 +39,77 @@ export function ProjectBoard({ projectId }: ProjectBoardProps) {
   const { data: project, isLoading } = useProject(projectId);
   const moveTask = useMoveTask(projectId);
   const modal = useModal();
+  const queryClient = useQueryClient();
+  const user = useAuthStore((state) => state.user);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterAssignee, setFilterAssignee] = useState<string>("all");
   const [filterDueDate, setFilterDueDate] = useState<string>("all");
+
+  // Real-time collaboration
+  const { members, channel } = usePresence(projectId, user?.id || "");
+  const { cursors, broadcastCursor } = useCursors(channel, user?.id || "");
+  const throttleRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Handle real-time task updates from other users
+  const handleRealtimeUpdate = useCallback(
+    (data: any) => {
+      // Invalidate queries to refetch data
+      queryClient.invalidateQueries({ queryKey: ["projects", projectId] });
+    },
+    [queryClient, projectId]
+  );
+
+  useRealtimeUpdates(projectId, handleRealtimeUpdate);
+
+  // Broadcast cursor position
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!user || !channel) return;
+
+      // Throttle cursor updates
+      if (throttleRef.current) {
+        clearTimeout(throttleRef.current);
+      }
+
+      throttleRef.current = setTimeout(() => {
+        const userName = (user as any).name || user.email.split("@")[0];
+        broadcastCursor(e.clientX, e.clientY, userName);
+      }, 50);
+    },
+    [user, channel, broadcastCursor]
+  );
+
+  useEffect(() => {
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      if (throttleRef.current) {
+        clearTimeout(throttleRef.current);
+      }
+    };
+  }, [handleMouseMove]);
+
+  // Generate consistent color for each user
+  const getUserColor = (userId: string): string => {
+    const colors = [
+      "#3B82F6", // blue
+      "#8B5CF6", // purple
+      "#EC4899", // pink
+      "#F59E0B", // amber
+      "#10B981", // emerald
+      "#6366F1", // indigo
+      "#14B8A6", // teal
+      "#F97316", // orange
+    ];
+
+    let hash = 0;
+    for (let i = 0; i < userId.length; i++) {
+      hash = userId.charCodeAt(i) + ((hash << 5) - hash);
+    }
+
+    return colors[Math.abs(hash) % colors.length];
+  };
 
   if (isLoading) {
     return (
@@ -178,7 +255,10 @@ export function ProjectBoard({ projectId }: ProjectBoardProps) {
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              {/* Presence Avatars */}
+              <PresenceAvatars members={members} />
+              <div className="h-6 w-px bg-border" />
               <Button
                 variant="outline"
                 size="sm"
@@ -364,6 +444,19 @@ export function ProjectBoard({ projectId }: ProjectBoardProps) {
           />
         )}
       </main>
+
+      {/* Real-time Cursors */}
+      <AnimatePresence>
+        {Array.from(cursors.values()).map((cursor) => (
+          <Cursor
+            key={cursor.userId}
+            x={cursor.x}
+            y={cursor.y}
+            userName={cursor.userName}
+            color={getUserColor(cursor.userId)}
+          />
+        ))}
+      </AnimatePresence>
     </div>
   );
 }

@@ -10,6 +10,7 @@ export type ModalType =
   | "shareProject"
   | "createStatus"
   | "createProject"
+  | "editProject"
   | "confirm";
 
 // Modal data types
@@ -52,6 +53,12 @@ export interface CreateStatusData {
 
 export interface CreateProjectData {}
 
+export interface EditProjectData {
+  projectId: string;
+  name: string;
+  description?: string | null;
+}
+
 export interface ConfirmData {
   title: string;
   description: string;
@@ -71,6 +78,7 @@ export type ModalData =
   | ShareProjectData
   | CreateStatusData
   | CreateProjectData
+  | EditProjectData
   | ConfirmData;
 
 export interface Modal {
@@ -89,7 +97,7 @@ interface ModalStore {
 
 export const useModalStore = create<ModalStore>((set, get) => ({
   modals: [],
-
+  
   open: (type, data) => {
     const id = `modal-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     set((state) => ({
@@ -97,17 +105,17 @@ export const useModalStore = create<ModalStore>((set, get) => ({
     }));
     return id;
   },
-
+  
   close: (id) => {
     set((state) => ({
       modals: state.modals.filter((modal) => modal.id !== id),
     }));
   },
-
+  
   closeAll: () => {
     set({ modals: [] });
   },
-
+  
   isOpen: (type) => {
     return get().modals.some((modal) => modal.type === type);
   },
