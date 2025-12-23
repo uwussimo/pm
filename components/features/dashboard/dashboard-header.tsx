@@ -1,6 +1,13 @@
 "use client";
 
-import { LogOut, User, Settings, HelpCircle, Sparkles } from "lucide-react";
+import {
+  LogOut,
+  User,
+  Settings,
+  HelpCircle,
+  Sparkles,
+  ZapIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -35,8 +42,8 @@ export function DashboardHeader({ userEmail }: DashboardHeaderProps) {
       <div className="container mx-auto px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 p-2">
-              <Sparkles className="h-5 w-5 text-white" />
+            <div className="rounded-lg bg-primary text-primary-foreground p-2">
+              <ZapIcon className="h-5 w-5 text-primary-foreground" />
             </div>
             <div>
               <h1 className="text-lg font-bold tracking-tight">Project Hub</h1>
