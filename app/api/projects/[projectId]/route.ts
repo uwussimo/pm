@@ -23,11 +23,19 @@ export async function GET(
           },
         },
       },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        ownerId: true,
+        createdAt: true,
+        updatedAt: true,
         users: {
           select: {
             id: true,
             email: true,
+            name: true,
+            githubUrl: true,
           },
         },
         statuses: {
@@ -41,6 +49,8 @@ export async function GET(
               select: {
                 id: true,
                 email: true,
+                name: true,
+                githubUrl: true,
               },
             },
             status: true,
@@ -110,6 +120,8 @@ export async function PATCH(
           select: {
             id: true,
             email: true,
+            name: true,
+            githubUrl: true,
           },
         },
       },

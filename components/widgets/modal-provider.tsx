@@ -6,6 +6,8 @@ import type {
   TaskEditData,
   TaskViewData,
   InviteUserData,
+  ManageUsersData,
+  ShareProjectData,
   CreateStatusData,
   CreateProjectData,
   ConfirmData,
@@ -14,6 +16,8 @@ import { TaskDialog } from "@/components/features/tasks/task-dialog";
 import { TaskSidebar } from "@/components/features/tasks/task-sidebar";
 import { ConfirmDialog } from "@/components/widgets/confirm-dialog";
 import { InviteUserDialog } from "@/components/features/projects/invite-user-dialog";
+import { ManageUsersDialog } from "@/components/features/projects/manage-users-dialog";
+import { ShareProjectDialog } from "@/components/features/projects/share-project-dialog";
 import { CreateStatusDialog } from "@/components/features/statuses/create-status-dialog";
 import { CreateProjectDialog } from "@/components/features/projects/create-project-dialog";
 
@@ -75,6 +79,30 @@ export function ModalProvider() {
             const data = modal.data as InviteUserData;
             return (
               <InviteUserDialog
+                key={modal.id}
+                open={true}
+                onOpenChange={handleClose}
+                projectId={data.projectId}
+              />
+            );
+          }
+
+          case "manageUsers": {
+            const data = modal.data as ManageUsersData;
+            return (
+              <ManageUsersDialog
+                key={modal.id}
+                open={true}
+                onOpenChange={handleClose}
+                projectId={data.projectId}
+              />
+            );
+          }
+
+          case "shareProject": {
+            const data = modal.data as ShareProjectData;
+            return (
+              <ShareProjectDialog
                 key={modal.id}
                 open={true}
                 onOpenChange={handleClose}

@@ -12,6 +12,8 @@ import { useRouter } from "next/navigation";
 interface User {
   id: string;
   email: string;
+  name?: string | null;
+  githubUrl?: string | null;
 }
 
 interface Status {

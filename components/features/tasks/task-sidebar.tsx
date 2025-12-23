@@ -39,6 +39,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { UserAvatar, getUserDisplayName } from "@/components/ui/user-avatar";
 import { cn } from "@/lib/utils";
 import { useTask } from "@/lib/hooks/use-tasks";
 import { useUpdateTask, useDeleteTask } from "@/lib/hooks/use-tasks";
@@ -50,7 +51,12 @@ interface TaskSidebarProps {
   onOpenChange: (open: boolean) => void;
   taskId: string | null;
   projectId: string;
-  projectUsers: { id: string; email: string }[];
+  projectUsers: {
+    id: string;
+    email: string;
+    name?: string | null;
+    githubUrl?: string | null;
+  }[];
   statuses: { id: string; name: string; color: string; unicode: string }[];
 }
 
@@ -183,12 +189,16 @@ export function TaskSidebar({
                       updateTask.mutate({ statusId: value });
                     }}
                   >
-                    <SelectTrigger className="h-8 w-auto border-0 px-2 hover:bg-muted focus:ring-0 text-sm">
+                    <SelectTrigger className="h-10 w-auto border-0 px-3 hover:bg-muted focus:ring-0 text-[15px]">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="min-w-[200px]">
                       {statuses.map((status) => (
-                        <SelectItem key={status.id} value={status.id}>
+                        <SelectItem
+                          key={status.id}
+                          value={status.id}
+                          className="h-10 text-[15px]"
+                        >
                           {status.unicode} {status.name}
                         </SelectItem>
                       ))}
@@ -210,14 +220,23 @@ export function TaskSidebar({
                       updateTask.mutate({ assigneeId: newValue });
                     }}
                   >
-                    <SelectTrigger className="h-8 w-auto border-0 px-2 hover:bg-muted focus:ring-0 text-sm">
+                    <SelectTrigger className="h-10 w-auto border-0 px-3 hover:bg-muted focus:ring-0 text-[15px]">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="unassigned">Unassigned</SelectItem>
+                    <SelectContent className="min-w-[200px]">
+                      <SelectItem
+                        value="unassigned"
+                        className="h-10 text-[15px]"
+                      >
+                        Unassigned
+                      </SelectItem>
                       {projectUsers.map((user) => (
-                        <SelectItem key={user.id} value={user.id}>
-                          {user.email.split("@")[0]}
+                        <SelectItem
+                          key={user.id}
+                          value={user.id}
+                          className="h-10 text-[15px]"
+                        >
+                          {getUserDisplayName(user)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -400,16 +419,23 @@ export function TaskSidebar({
                         </div>
                         <div className="flex-1 border rounded-lg p-3 space-y-2 bg-card">
                           <div className="flex items-start justify-between gap-2">
-                            <div className="flex flex-col">
-                              <span className="text-sm font-medium">
-                                {comment.user.email.split("@")[0]}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                {format(
-                                  new Date(comment.createdAt),
-                                  "MMM d 'at' h:mm a"
-                                )}
-                              </span>
+                            <div className="flex items-center gap-2">
+                              <UserAvatar
+                                user={comment.user}
+                                size="sm"
+                                className="h-6 w-6"
+                              />
+                              <div className="flex flex-col">
+                                <span className="text-sm font-medium">
+                                  {getUserDisplayName(comment.user)}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {format(
+                                    new Date(comment.createdAt),
+                                    "MMM d 'at' h:mm a"
+                                  )}
+                                </span>
+                              </div>
                             </div>
                           </div>
                           <p className="text-sm leading-relaxed text-foreground">

@@ -57,6 +57,8 @@ export async function POST(
           select: {
             id: true,
             email: true,
+            name: true,
+            githubUrl: true,
           },
         },
       },

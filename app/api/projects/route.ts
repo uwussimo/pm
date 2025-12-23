@@ -23,6 +23,8 @@ export async function GET() {
           select: {
             id: true,
             email: true,
+            name: true,
+            githubUrl: true,
           },
         },
         _count: {
@@ -77,6 +79,8 @@ export async function POST(request: NextRequest) {
           select: {
             id: true,
             email: true,
+            name: true,
+            githubUrl: true,
           },
         },
         _count: {

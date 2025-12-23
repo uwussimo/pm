@@ -1,13 +1,7 @@
 "use client";
 
-import {
-  LogOut,
-  User,
-  Settings,
-  HelpCircle,
-  Sparkles,
-  ZapIcon,
-} from "lucide-react";
+import { LogOut, Settings, ZapIcon } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -17,54 +11,45 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ThemeToggle } from "@/components/widgets/theme-toggle";
+import { UserAvatar, getUserDisplayName } from "@/components/ui/user-avatar";
 import { useAuth } from "@/lib/hooks/use-auth";
 
 interface DashboardHeaderProps {
-  userEmail?: string;
+  user: {
+    id: string;
+    email: string;
+    name?: string | null;
+    githubUrl?: string | null;
+  };
 }
 
-export function DashboardHeader({ userEmail }: DashboardHeaderProps) {
+export function DashboardHeader({ user }: DashboardHeaderProps) {
   const { signOut, isSigningOut } = useAuth();
-
-  const initials =
-    userEmail
-      ?.split("@")[0]
-      .split(".")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2) || "U";
+  const displayName = getUserDisplayName(user);
 
   return (
     <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-primary text-primary-foreground p-2">
-              <ZapIcon className="h-5 w-5 text-primary-foreground" />
+            <div className="rounded-lg bg-[#1D1D1F] dark:bg-white p-2">
+              <ZapIcon className="h-5 w-5 text-white dark:text-[#1D1D1F]" />
             </div>
             <div>
-              <h1 className="text-lg font-bold tracking-tight">Project Hub</h1>
-              <p className="text-xs text-muted-foreground">Manage your work</p>
+              <h1 className="text-[17px] font-semibold tracking-tight text-[#1D1D1F] dark:text-white">
+                PM
+              </h1>
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <ThemeToggle />
-
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-10 gap-2 px-3">
-                <Avatar className="h-7 w-7">
-                  <AvatarFallback className="bg-primary/10 text-primary font-medium text-sm">
-                    {initials}
-                  </AvatarFallback>
-                </Avatar>
+                <UserAvatar user={user} size="sm" className="h-7 w-7" />
                 <span className="hidden sm:inline-block text-sm font-medium">
-                  {userEmail?.split("@")[0] || "User"}
+                  {displayName}
                 </span>
               </Button>
             </DropdownMenuTrigger>
@@ -72,26 +57,20 @@ export function DashboardHeader({ userEmail }: DashboardHeaderProps) {
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium leading-none">
-                    {userEmail?.split("@")[0] || "User"}
+                    {displayName}
                   </p>
                   <p className="text-xs leading-none text-muted-foreground">
-                    {userEmail}
+                    {user.email}
                   </p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="gap-2 cursor-pointer">
-                <User className="h-4 w-4" />
-                Profile
-              </DropdownMenuItem>
-              <DropdownMenuItem className="gap-2 cursor-pointer">
-                <Settings className="h-4 w-4" />
-                Settings
-              </DropdownMenuItem>
-              <DropdownMenuItem className="gap-2 cursor-pointer">
-                <HelpCircle className="h-4 w-4" />
-                Help & Support
-              </DropdownMenuItem>
+              <Link href="/settings">
+                <DropdownMenuItem className="gap-2 cursor-pointer">
+                  <Settings className="h-4 w-4" />
+                  Settings
+                </DropdownMenuItem>
+              </Link>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="gap-2 text-destructive focus:text-destructive cursor-pointer"

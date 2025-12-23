@@ -53,24 +53,27 @@ function ProjectCard({ project, onClick, modal }: ProjectCardProps) {
     });
   };
 
+  const handleManageUsers = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    modal.openManageUsers({ projectId: project.id });
+  };
+
   return (
     <Card
-      className="group relative cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-300 border-border/50 hover:border-border overflow-hidden"
+      className="group relative cursor-pointer hover:shadow-sm transition-all duration-200 border bg-background"
       onClick={onClick}
     >
-      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="rounded-lg bg-primary/10 p-2.5 group-hover:bg-primary/20 transition-colors">
-              <FolderOpen className="h-5 w-5 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <CardTitle className="text-lg font-semibold line-clamp-1 group-hover:text-primary transition-colors">
-                {project.name}
-              </CardTitle>
-            </div>
+          <div className="flex-1 min-w-0">
+            <CardTitle className="text-[17px] font-semibold tracking-tight line-clamp-1 text-[#1D1D1F] dark:text-white mb-1">
+              {project.name}
+            </CardTitle>
+            {project.description && (
+              <CardDescription className="text-[15px] line-clamp-2 text-[#86868B]">
+                {project.description}
+              </CardDescription>
+            )}
           </div>
 
           <DropdownMenu>
@@ -78,7 +81,7 @@ function ProjectCard({ project, onClick, modal }: ProjectCardProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="h-8 w-8 flex-shrink-0"
               >
                 <MoreVertical className="h-4 w-4" />
               </Button>
@@ -87,6 +90,13 @@ function ProjectCard({ project, onClick, modal }: ProjectCardProps) {
               align="end"
               onClick={(e) => e.stopPropagation()}
             >
+              <DropdownMenuItem
+                className="gap-2 cursor-pointer"
+                onClick={handleManageUsers}
+              >
+                <Users className="h-4 w-4" />
+                Manage Users
+              </DropdownMenuItem>
               <DropdownMenuItem className="gap-2 cursor-pointer">
                 <Edit className="h-4 w-4" />
                 Edit Project
@@ -102,42 +112,26 @@ function ProjectCard({ project, onClick, modal }: ProjectCardProps) {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-
-        {project.description && (
-          <CardDescription className="text-sm line-clamp-2 mt-3 ml-14">
-            {project.description}
-          </CardDescription>
-        )}
       </CardHeader>
 
       <CardContent className="pt-0">
-        <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <div className="rounded-md bg-muted p-1.5">
-                <CheckSquare className="h-4 w-4" />
-              </div>
-              <span className="font-medium">{project._count.tasks}</span>
-              <span className="text-xs">tasks</span>
-            </div>
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <div className="rounded-md bg-muted p-1.5">
-                <Users className="h-4 w-4" />
-              </div>
-              <span className="font-medium">{project.users.length}</span>
-              <span className="text-xs">members</span>
-            </div>
+        <div className="flex items-center gap-6 text-[15px] text-[#86868B]">
+          <div className="flex items-center gap-2">
+            <CheckSquare className="h-4 w-4" />
+            <span>{project._count.tasks}</span>
           </div>
-        </div>
-
-        <div className="flex items-center gap-2 mt-4 pt-4 border-t text-xs text-muted-foreground">
-          <Clock className="h-3.5 w-3.5" />
-          <span>
-            Updated{" "}
-            {formatDistanceToNow(new Date(project.updatedAt), {
-              addSuffix: true,
-            })}
-          </span>
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            <span>{project.users.length}</span>
+          </div>
+          <div className="flex items-center gap-2 ml-auto">
+            <Clock className="h-4 w-4" />
+            <span className="text-[13px]">
+              {formatDistanceToNow(new Date(project.updatedAt), {
+                addSuffix: true,
+              })}
+            </span>
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -181,10 +175,12 @@ export function ProjectsList() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">Projects</h2>
-          <p className="text-sm text-muted-foreground mt-1">
+          <h2 className="text-[28px] font-semibold tracking-tight text-[#1D1D1F] dark:text-white">
+            Projects
+          </h2>
+          <p className="text-[15px] text-[#86868B] mt-1">
             Manage your projects and tasks
           </p>
         </div>
@@ -197,11 +193,13 @@ export function ProjectsList() {
       {!projects || projects.length === 0 ? (
         <Card className="border-dashed border-2 bg-muted/10">
           <CardContent className="flex flex-col items-center justify-center py-20">
-            <div className="rounded-full bg-primary/10 p-6 mb-6">
-              <FolderOpen className="h-12 w-12 text-primary" />
+            <div className="rounded-full bg-[#1D1D1F] dark:bg-white p-6 mb-6">
+              <FolderOpen className="h-12 w-12 text-white dark:text-[#1D1D1F]" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">No projects yet</h3>
-            <p className="text-sm text-muted-foreground mb-8 text-center max-w-sm">
+            <h3 className="text-[21px] font-semibold mb-2 text-[#1D1D1F] dark:text-white">
+              No projects yet
+            </h3>
+            <p className="text-[15px] text-[#86868B] mb-8 text-center max-w-sm">
               Get started by creating your first project. Organize your tasks,
               collaborate with your team, and track progress.
             </p>
@@ -216,7 +214,7 @@ export function ProjectsList() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {projects.map((project) => (
             <ProjectCard
               key={project.id}

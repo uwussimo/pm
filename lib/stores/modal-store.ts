@@ -6,6 +6,8 @@ export type ModalType =
   | "taskEdit"
   | "taskView"
   | "inviteUser"
+  | "manageUsers"
+  | "shareProject"
   | "createStatus"
   | "createProject"
   | "confirm";
@@ -36,6 +38,14 @@ export interface InviteUserData {
   projectId: string;
 }
 
+export interface ManageUsersData {
+  projectId: string;
+}
+
+export interface ShareProjectData {
+  projectId: string;
+}
+
 export interface CreateStatusData {
   projectId: string;
 }
@@ -57,6 +67,8 @@ export type ModalData =
   | TaskEditData
   | TaskViewData
   | InviteUserData
+  | ManageUsersData
+  | ShareProjectData
   | CreateStatusData
   | CreateProjectData
   | ConfirmData;
@@ -77,7 +89,7 @@ interface ModalStore {
 
 export const useModalStore = create<ModalStore>((set, get) => ({
   modals: [],
-  
+
   open: (type, data) => {
     const id = `modal-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     set((state) => ({
@@ -85,19 +97,18 @@ export const useModalStore = create<ModalStore>((set, get) => ({
     }));
     return id;
   },
-  
+
   close: (id) => {
     set((state) => ({
       modals: state.modals.filter((modal) => modal.id !== id),
     }));
   },
-  
+
   closeAll: () => {
     set({ modals: [] });
   },
-  
+
   isOpen: (type) => {
     return get().modals.some((modal) => modal.type === type);
   },
 }));
-

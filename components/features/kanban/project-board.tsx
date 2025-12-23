@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Settings, UserPlus, Search, Plus, X } from "lucide-react";
+import { ArrowLeft, Settings, Share2, Search, Plus, X } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { KanbanBoard } from "@/components/features/kanban/kanban-board-new";
+import { getUserDisplayName } from "@/components/ui/user-avatar";
 import { useProject } from "@/lib/hooks/use-projects";
 import { useMoveTask } from "@/lib/hooks/use-tasks";
 import { useModal } from "@/lib/hooks/use-modal";
@@ -181,11 +182,11 @@ export function ProjectBoard({ projectId }: ProjectBoardProps) {
               <Button
                 variant="outline"
                 size="sm"
-                className="h-9 gap-2 hidden sm:flex"
-                onClick={() => modal.openInviteUser({ projectId })}
+                className="h-9 gap-2"
+                onClick={() => modal.openShareProject({ projectId })}
               >
-                <UserPlus className="h-4 w-4" />
-                Invite
+                <Share2 className="h-4 w-4" />
+                Share
               </Button>
               <Button
                 variant="outline"
@@ -238,7 +239,7 @@ export function ProjectBoard({ projectId }: ProjectBoardProps) {
                 <SelectItem value="unassigned">Unassigned</SelectItem>
                 {project.users.map((user) => (
                   <SelectItem key={user.id} value={user.id}>
-                    {user.email.split("@")[0]}
+                    {getUserDisplayName(user)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -303,9 +304,12 @@ export function ProjectBoard({ projectId }: ProjectBoardProps) {
                 <Badge variant="secondary" className="gap-1.5 font-normal">
                   {filterAssignee === "unassigned"
                     ? "Unassigned"
-                    : project.users
-                        .find((u) => u.id === filterAssignee)
-                        ?.email.split("@")[0]}
+                    : getUserDisplayName(
+                        project.users.find((u) => u.id === filterAssignee) || {
+                          id: "",
+                          email: "",
+                        }
+                      )}
                   <X
                     className="h-3 w-3 cursor-pointer hover:text-foreground transition-colors"
                     onClick={() => setFilterAssignee("all")}

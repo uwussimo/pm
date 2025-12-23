@@ -57,6 +57,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
+import { UserAvatar, getUserDisplayName } from "@/components/ui/user-avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useUpdateTask, useCreateTask } from "@/lib/hooks/use-tasks";
 import { useDeleteStatus, useUpdateStatus } from "@/lib/hooks/use-statuses";
 import { useModal } from "@/lib/hooks/use-modal";
@@ -66,7 +68,12 @@ interface Task {
   title: string;
   description: string | null;
   statusId: string;
-  assignee: { id: string; email: string } | null;
+  assignee: {
+    id: string;
+    email: string;
+    name?: string | null;
+    githubUrl?: string | null;
+  } | null;
   dueDate: string | null;
   _count: { comments: number };
 }
@@ -82,6 +89,8 @@ interface Column {
 interface User {
   id: string;
   email: string;
+  name?: string | null;
+  githubUrl?: string | null;
 }
 
 interface KanbanBoardProps {
@@ -199,172 +208,188 @@ function TaskCard({
           {/* Badges Row */}
           <div className="flex flex-wrap items-center gap-1.5 pt-1">
             {/* Due Date Badge with Quick Edit */}
-            <Popover
-              open={dueDatePopoverOpen && !isDragging}
-              onOpenChange={(open) =>
-                !isDragging && setDueDatePopoverOpen(open)
-              }
-            >
-              <PopoverTrigger asChild>
-                <button
-                  className={cn(
-                    "inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-colors",
-                    task.dueDate
-                      ? isOverdue
-                        ? "bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20"
-                        : "bg-muted text-muted-foreground hover:bg-muted/80"
-                      : "bg-muted/50 text-muted-foreground/50 hover:bg-muted"
-                  )}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                  }}
-                  onPointerDown={(e) => {
-                    e.stopPropagation();
-                  }}
-                >
-                  <CalendarIcon className="h-3 w-3" />
-                  <span>
-                    {task.dueDate
-                      ? (() => {
-                          try {
-                            const dateStr = task.dueDate.split("T")[0];
-                            const date = new Date(dateStr + "T00:00:00");
-                            return date.toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                            });
-                          } catch {
-                            return task.dueDate;
-                          }
-                        })()
-                      : "Due date"}
-                  </span>
-                </button>
-              </PopoverTrigger>
-              <PopoverContent
-                className="w-auto p-0"
-                align="start"
-                onClick={(e) => e.stopPropagation()}
-                onPointerDown={(e) => e.stopPropagation()}
+            {!isDragging && (
+              <Popover
+                open={dueDatePopoverOpen}
+                onOpenChange={setDueDatePopoverOpen}
               >
-                <div className="space-y-2 p-3">
-                  <p className="text-xs font-medium">Due date</p>
-                  <Calendar
-                    mode="single"
-                    selected={
+                <PopoverTrigger asChild>
+                  <button
+                    className={cn(
+                      "inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-colors",
                       task.dueDate
+                        ? isOverdue
+                          ? "bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80"
+                        : "bg-muted/50 text-muted-foreground/50 hover:bg-muted"
+                    )}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                    }}
+                    onPointerDown={(e) => {
+                      e.stopPropagation();
+                    }}
+                  >
+                    <CalendarIcon className="h-3 w-3" />
+                    <span>
+                      {task.dueDate
                         ? (() => {
                             try {
                               const dateStr = task.dueDate.split("T")[0];
-                              return new Date(dateStr + "T00:00:00");
+                              const date = new Date(dateStr + "T00:00:00");
+                              return date.toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                              });
                             } catch {
-                              return undefined;
+                              return task.dueDate;
                             }
                           })()
-                        : undefined
-                    }
-                    onSelect={(date) => {
-                      if (date) {
-                        const year = date.getFullYear();
-                        const month = String(date.getMonth() + 1).padStart(
-                          2,
-                          "0"
-                        );
-                        const day = String(date.getDate()).padStart(2, "0");
-                        handleDueDateChange(`${year}-${month}-${day}`);
+                        : "Due date"}
+                    </span>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-auto p-0 z-50"
+                  align="start"
+                  onClick={(e) => e.stopPropagation()}
+                  onPointerDown={(e) => e.stopPropagation()}
+                >
+                  <div className="space-y-2 p-3">
+                    <p className="text-xs font-medium">Due date</p>
+                    <Calendar
+                      mode="single"
+                      selected={
+                        task.dueDate
+                          ? (() => {
+                              try {
+                                const dateStr = task.dueDate.split("T")[0];
+                                return new Date(dateStr + "T00:00:00");
+                              } catch {
+                                return undefined;
+                              }
+                            })()
+                          : undefined
                       }
-                    }}
-                    initialFocus
-                  />
-                  {task.dueDate && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full h-8 text-xs"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDueDateChange("");
+                      onSelect={(date) => {
+                        if (date) {
+                          const year = date.getFullYear();
+                          const month = String(date.getMonth() + 1).padStart(
+                            2,
+                            "0"
+                          );
+                          const day = String(date.getDate()).padStart(2, "0");
+                          handleDueDateChange(`${year}-${month}-${day}`);
+                        }
                       }}
-                    >
-                      Remove due date
-                    </Button>
-                  )}
-                </div>
-              </PopoverContent>
-            </Popover>
+                      initialFocus
+                    />
+                    {task.dueDate && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full h-8 text-xs"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDueDateChange("");
+                        }}
+                      >
+                        Remove due date
+                      </Button>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
 
             {/* Assignee Badge with Quick Edit */}
-            <Popover
-              open={assigneePopoverOpen && !isDragging}
-              onOpenChange={(open) =>
-                !isDragging && setAssigneePopoverOpen(open)
-              }
-            >
-              <PopoverTrigger asChild>
-                <button
-                  className={cn(
-                    "inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-colors",
-                    task.assignee
-                      ? "bg-muted text-muted-foreground hover:bg-muted/80"
-                      : "bg-muted/50 text-muted-foreground/50 hover:bg-muted"
-                  )}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                  }}
-                  onPointerDown={(e) => {
-                    e.stopPropagation();
-                  }}
-                  title={task.assignee?.email}
-                >
-                  <User className="h-3 w-3" />
-                  <span className="truncate max-w-[80px]">
-                    {task.assignee
-                      ? task.assignee.email.split("@")[0]
-                      : "Assign"}
-                  </span>
-                </button>
-              </PopoverTrigger>
-              <PopoverContent
-                className="w-[200px] p-2"
-                align="start"
-                onClick={(e) => e.stopPropagation()}
-                onPointerDown={(e) => e.stopPropagation()}
+            {!isDragging && (
+              <Popover
+                open={assigneePopoverOpen}
+                onOpenChange={setAssigneePopoverOpen}
               >
-                <div className="space-y-1">
-                  <p className="text-xs font-medium px-2 py-1">Assign to</p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start h-8 text-xs font-normal"
+                <PopoverTrigger asChild>
+                  <button
+                    className={cn(
+                      "inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-colors",
+                      task.assignee
+                        ? "bg-muted text-muted-foreground hover:bg-muted/80"
+                        : "bg-muted/50 text-muted-foreground/50 hover:bg-muted"
+                    )}
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleAssigneeChange("unassigned");
                     }}
+                    onPointerDown={(e) => {
+                      e.stopPropagation();
+                    }}
+                    title={
+                      task.assignee
+                        ? getUserDisplayName(task.assignee)
+                        : "Assign"
+                    }
                   >
-                    <User className="h-3 w-3 mr-2" />
-                    Unassigned
-                  </Button>
-                  {projectUsers.map((user) => (
+                    {task.assignee ? (
+                      <UserAvatar
+                        user={task.assignee}
+                        size="sm"
+                        className="h-3 w-3"
+                      />
+                    ) : (
+                      <User className="h-3 w-3" />
+                    )}
+                    <span className="truncate max-w-[80px]">
+                      {task.assignee
+                        ? getUserDisplayName(task.assignee)
+                        : "Assign"}
+                    </span>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-[200px] p-2 z-50"
+                  align="start"
+                  onClick={(e) => e.stopPropagation()}
+                  onPointerDown={(e) => e.stopPropagation()}
+                >
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium px-2 py-1">Assign to</p>
                     <Button
-                      key={user.id}
                       variant="ghost"
                       size="sm"
-                      className={cn(
-                        "w-full justify-start h-8 text-xs font-normal",
-                        task.assignee?.id === user.id && "bg-accent"
-                      )}
+                      className="w-full justify-start h-8 text-xs font-normal"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleAssigneeChange(user.id);
+                        handleAssigneeChange("unassigned");
                       }}
                     >
                       <User className="h-3 w-3 mr-2" />
-                      {user.email.split("@")[0]}
+                      Unassigned
                     </Button>
-                  ))}
-                </div>
-              </PopoverContent>
-            </Popover>
+                    {projectUsers.map((user) => (
+                      <Button
+                        key={user.id}
+                        variant="ghost"
+                        size="sm"
+                        className={cn(
+                          "w-full justify-start h-8 text-xs font-normal",
+                          task.assignee?.id === user.id && "bg-accent"
+                        )}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAssigneeChange(user.id);
+                        }}
+                      >
+                        <UserAvatar
+                          user={user}
+                          size="sm"
+                          className="h-3 w-3 mr-2"
+                        />
+                        {getUserDisplayName(user)}
+                      </Button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
 
             {/* Comments Badge */}
             {task._count.comments > 0 && (

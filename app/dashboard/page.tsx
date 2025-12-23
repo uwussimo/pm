@@ -13,7 +13,12 @@ export default async function DashboardPage() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.userId },
-    select: { id: true, email: true },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      githubUrl: true,
+    },
   });
 
   if (!user) {
@@ -22,7 +27,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <DashboardHeader userEmail={user.email} />
+      <DashboardHeader user={user} />
       <main className="container mx-auto px-6 py-8">
         <ProjectsList />
       </main>

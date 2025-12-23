@@ -14,12 +14,13 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { email } = await request.json();
+    const { userId } = await request.json();
 
-    if (!email) {
-      return NextResponse.json({ error: "Email is required" }, { status: 400 });
+    if (!userId) {
+      return NextResponse.json({ error: "User ID is required" }, { status: 400 });
     }
 
+    // Check if current user is the project owner
     const project = await prisma.project.findFirst({
       where: {
         id: projectId,
@@ -29,24 +30,25 @@ export async function POST(
 
     if (!project) {
       return NextResponse.json(
-        { error: "Project not found or unauthorized" },
-        { status: 404 }
+        { error: "Project not found or you are not the owner" },
+        { status: 403 }
       );
     }
 
-    const userToInvite = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (!userToInvite) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    // Prevent owner from removing themselves
+    if (userId === session.userId) {
+      return NextResponse.json(
+        { error: "Cannot remove yourself from your own project" },
+        { status: 400 }
+      );
     }
 
+    // Remove user from project
     const updatedProject = await prisma.project.update({
       where: { id: projectId },
       data: {
         users: {
-          connect: { id: userToInvite.id },
+          disconnect: { id: userId },
         },
       },
       include: {
@@ -55,7 +57,6 @@ export async function POST(
             id: true,
             email: true,
             name: true,
-            githubUrl: true,
           },
         },
       },
@@ -63,10 +64,11 @@ export async function POST(
 
     return NextResponse.json({ project: updatedProject });
   } catch (error) {
-    console.error("Invite user error:", error);
+    console.error("Remove user error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
     );
   }
 }
+
