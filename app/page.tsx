@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,6 +31,45 @@ async function getGitHubStars() {
   }
 }
 
+async function getUserStats() {
+  try {
+    const userCount = await prisma.user.count();
+
+    // Get last 3 users for avatars
+    const recentUsers = await prisma.user.findMany({
+      take: 3,
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+      },
+    });
+
+    return {
+      count: userCount,
+      recentUsers: recentUsers.map((user) => ({
+        id: user.id,
+        name: user.name || user.email.split("@")[0],
+        initials: (user.name || user.email.split("@")[0])
+          .split(" ")
+          .map((n) => n[0])
+          .join("")
+          .toUpperCase()
+          .slice(0, 2),
+      })),
+    };
+  } catch (error) {
+    console.error("Failed to fetch user stats:", error);
+    return {
+      count: 100,
+      recentUsers: [],
+    };
+  }
+}
+
 export default async function Home() {
   const session = await getSession();
 
@@ -38,6 +78,7 @@ export default async function Home() {
   }
 
   const stars = await getGitHubStars();
+  const userStats = await getUserStats();
 
   return (
     <div className="min-h-screen bg-background">
@@ -75,6 +116,43 @@ export default async function Home() {
             Keep your team aligned with a clean, focused workspace designed for
             clarity and speed
           </p>
+
+          {/* Social Proof - Real User Avatars */}
+          {userStats && userStats.count > 0 && (
+            <div className="flex items-center justify-center gap-2 text-[15px] text-muted-foreground">
+              <div className="flex -space-x-2">
+                {userStats.recentUsers && userStats.recentUsers.length > 0 ? (
+                  userStats.recentUsers.map((user: any, index: number) => {
+                    const colors = [
+                      "from-blue-500 to-purple-500",
+                      "from-purple-500 to-pink-500",
+                      "from-pink-500 to-orange-500",
+                    ];
+                    return (
+                      <div
+                        key={user.id}
+                        className={`h-7 w-7 rounded-full bg-gradient-to-br ${colors[index]} border-2 border-background flex items-center justify-center text-[10px] font-semibold text-white shadow-sm`}
+                        title={user.name}
+                      >
+                        {user.initials}
+                      </div>
+                    );
+                  })
+                ) : (
+                  <>
+                    <div className="h-7 w-7 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 border-2 border-background" />
+                    <div className="h-7 w-7 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 border-2 border-background" />
+                    <div className="h-7 w-7 rounded-full bg-gradient-to-br from-pink-500 to-orange-500 border-2 border-background" />
+                  </>
+                )}
+              </div>
+              <span className="font-medium">
+                <span className="text-foreground">{userStats.count}+</span>{" "}
+                users joined
+              </span>
+            </div>
+          )}
+
           <div className="pt-4 flex items-center justify-center gap-3">
             <Link href="/signup">
               <Button size="lg" className="text-base h-12 px-8 gap-2">

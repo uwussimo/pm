@@ -206,6 +206,11 @@ export function useRealtimeUpdates(
     channel.bind("task-updated", onTaskUpdate);
     channel.bind("task-deleted", onTaskUpdate);
     channel.bind("task-moved", onTaskUpdate);
+    
+    // Listen for status events
+    channel.bind("status-created", onTaskUpdate);
+    channel.bind("status-updated", onTaskUpdate);
+    channel.bind("status-deleted", onTaskUpdate);
 
     return () => {
       channel.unbind_all();
